@@ -82,7 +82,20 @@ const APP_H: i32 = 480;
 
 const DRAW_W: i32 = 1000;
 const DRAW_H: i32 = 1000;
-const ANIM_TYPE: u8 = 6;
+/*  Animation Types
+1.  Pulsing radius-filling squircle.
+2.  Circumference-filling circle CCW.
+3.  Circumference-filling circle, CW.
+4.  Orbiting N-Ary balls.
+5.  Circumference-filling circle, with N-Ary orbiting balls.
+6.  N-start circumference-following arcs.
+7.  Concentric reverse-direction circumference-following circles.
+8.  Concentric reverse-direction circumference-following circles V2.
+9.  Concentric reverse-direction circumference-following circles, multi-speed.
+10.  Orbiting N-Ary balls, with radius lines.
+11.  Orbiting N-Ary balls, with radius-following pulsers.
+*/
+const ANIM_TYPE: u8 = 11;
 //#  It should be possible to parameterise all of the animation types.
 
 //  Global Variables
@@ -220,129 +233,232 @@ fn cairo_loading_render (area: &gtk ::DrawingArea, cairo: &gtk ::cairo ::Context
 	{
 		1 =>
 		{
-			let iter = iter * 3.0;
-			//  Draw a squircle.
-			if (iter % 200.0 <= 100.0)
+			let iterScaled = iter * 3.0;
+			let radMax = 100.0;
+			if (iterScaled % (radMax * 2.0) <= radMax)
 			{
-				cairo .move_to (iter % 200.0, 0.0);
-				cairo .arc (0.0, 0.0, iter % 200.0, 0.0, PI * 2.0);
+				cairo .move_to (iterScaled % (radMax * 2.0), 0.0);
+				cairo .arc (0.0, 0.0, iterScaled % (radMax * 2.0), 0.0, PI * 2.0);
 			}
 			else
 			{
-				cairo .move_to (200.0 - iter % 200.0, 0.0);
-				cairo .arc (0.0, 0.0, 200.0 - iter % 200.0, 0.0, PI * 2.0);
+				cairo .move_to (radMax * 2.0 - iterScaled % (radMax * 2.0), 0.0);
+				cairo .arc (0.0, 0.0, radMax * 2.0 - iterScaled % (radMax * 2.0), 0.0, PI * 2.0);
 			}
 		},
 		2 =>
 		{
-			let iter = iter * 0.26;
-			//  Draw a circumference-filling circle.
-			if (iter % (PI * 4.0) <= PI * 2.0)
+			let iterScaled = iter * 0.26 % (PI * 4.0);
+			let radMax = 100.0;
+			cairo .move_to (radMax, 0.0);
+			match (iterScaled <= PI * 2.0)
 			{
-				cairo .move_to (100.0, 0.0);
-				cairo .arc (0.0, 0.0, 100.0, 0.0, iter % (PI * 2.0));
-			}
-			else
-			{
-				cairo .move_to (100.0, 0.0);
-				cairo .arc_negative (0.0, 0.0, 100.0, 0.0, iter % (PI * 2.0));
-			}
+				true => cairo .arc (0.0, 0.0, radMax, 0.0, iterScaled),
+				false => cairo .arc_negative (0.0, 0.0, radMax, 0.0, iterScaled),
+			};
 		},
 		3 =>
 		{
-			let iter1 = iter * 0.1 + PI * 2.0 * 0.0/3.0;
-			let iter2 = iter * 0.1 + PI * 2.0 * 1.0/3.0;
-			let iter3 = iter * 0.1 + PI * 2.0 * 2.0/3.0;
-			//  Orbiting N-Ary Balls.
-			//  First Ball
-			cairo .move_to (20.0 + 100.0 * iter1 .cos (), 100.0 * iter1 .sin ());
-			cairo .arc (100.0 * iter1 .cos (), 100.0 * iter1 .sin (), 20.0, 0.0, PI * 2.0);
-			//  Second Ball
-			cairo .move_to (20.0 + 100.0 * iter2 .cos (), 100.0 * iter2 .sin ());
-			cairo .arc (100.0 * iter2 .cos (), 100.0 * iter2 .sin (), 20.0, 0.0, PI * 2.0);
-			//  Third Ball
-			cairo .move_to (20.0 + 100.0 * iter3 .cos (), 100.0 * iter3 .sin ());
-			cairo .arc (100.0 * iter3 .cos (), 100.0 * iter3 .sin (), 20.0, 0.0, PI * 2.0);
+			let iterScaled = iter * 0.26 % (PI * 4.0);
+			let iterRev = PI * 2.0 - iterScaled;
+			let radMax = 100.0;
+			cairo .move_to (radMax * iterRev .cos (), radMax * iterRev .sin ());
+			match (iterScaled <= PI * 2.0)
+			{
+				true => cairo .arc (0.0, 0.0, radMax, iterRev, PI * 2.0),
+				false => cairo .arc_negative (0.0, 0.0, radMax, iterRev, PI * 2.0),
+			};
 		},
 		4 =>
 		{
-			let iterCirc = iter * 0.26;
-			//  Draw a circumference-filling circle.
-			if (iterCirc % (PI * 4.0) <= PI * 2.0)
+			let radCircle = 20.0;
+			let radOrbit = 100.0;
+			let countCircle = 3;
+			let iterScaled = iter * 0.1;
+
+			for circle in 0..countCircle
 			{
-				cairo .move_to (200.0, 0.0);
-				cairo .arc (0.0, 0.0, 200.0, 0.0, iterCirc % (PI * 2.0));
+				let iterStart = (iter * 0.1 + PI * 2.0 * circle as f64 / countCircle as f64) % (PI * 2.0);
+				cairo .move_to (radCircle + radOrbit * iterStart .cos (), radOrbit * iterStart .sin ());
+				cairo .arc (radOrbit * iterStart .cos (), radOrbit * iterStart .sin (), radCircle, 0.0, PI * 2.0);
 			}
-			else
-			{
-				cairo .move_to (200.0, 0.0);
-				cairo .arc_negative (0.0, 0.0, 200.0, 0.0, iterCirc % (PI * 2.0));
-			}
-			let iter1 = iter * 0.1 + PI * 2.0 * 0.0/3.0;
-			let iter2 = iter * 0.1 + PI * 2.0 * 1.0/3.0;
-			let iter3 = iter * 0.1 + PI * 2.0 * 2.0/3.0;
-			//  Orbiting N-Ary Balls.
-			//  First Ball
-			cairo .move_to (20.0 + 100.0 * iter1 .cos (), 100.0 * iter1 .sin ());
-			cairo .arc (100.0 * iter1 .cos (), 100.0 * iter1 .sin (), 20.0, 0.0, PI * 2.0);
-			//  Second Ball
-			cairo .move_to (20.0 + 100.0 * iter2 .cos (), 100.0 * iter2 .sin ());
-			cairo .arc (100.0 * iter2 .cos (), 100.0 * iter2 .sin (), 20.0, 0.0, PI * 2.0);
-			//  Third Ball
-			cairo .move_to (20.0 + 100.0 * iter3 .cos (), 100.0 * iter3 .sin ());
-			cairo .arc (100.0 * iter3 .cos (), 100.0 * iter3 .sin (), 20.0, 0.0, PI * 2.0);
 		},
 		5 =>
 		{
-			let iterCirc = iter * 0.26;
-			//  Draw a circumference-filling circle.
-			if (iterCirc % (PI * 4.0) <= PI * 2.0)
+			let radOuter = 200.0;
+			let radOrbit = 100.0;
+			let radCircle = 20.0;
+			let countCircle = 3;
+			let iterCirc = (iter * 0.26) % (PI * 4.0);
+			cairo .move_to (radOuter, 0.0);
+			match (iterCirc <= PI * 2.0)
 			{
-				cairo .move_to (200.0, 0.0);
-				cairo .arc (0.0, 0.0, 200.0, 0.0, iterCirc % (PI * 2.0));
-			}
-			else
+				true => cairo .arc (0.0, 0.0, radOuter, 0.0, iterCirc),
+				false => cairo .arc_negative (0.0, 0.0, radOuter, 0.0, iterCirc),
+			};
+
+			for circle in 0..countCircle
 			{
-				cairo .move_to (200.0, 0.0);
-				cairo .arc_negative (0.0, 0.0, 200.0, 0.0, iterCirc % (PI * 2.0));
+				let iterStart = (iter * 0.1 + PI * 2.0 * circle as f64 / countCircle as f64) % (PI * 2.0);
+				cairo .move_to (radCircle + radOrbit * iterStart .cos (), radOrbit * iterStart .sin ());
+				cairo .arc (radOrbit * iterStart .cos (), radOrbit * iterStart .sin (), radCircle, 0.0, PI * 2.0);
 			}
-			let iter1 = -iter * 0.1 + PI * 2.0 * 0.0/2.0;
-			let iter2 = -iter * 0.1 + PI * 2.0 * 1.0/2.0;
-			//  Orbiting N-Ary Balls.
-			//  First Ball
-			cairo .move_to (20.0 + 85.0 * iter1 .cos (), 85.0 * iter1 .sin ());
-			cairo .arc (85.0 * iter1 .cos (), 85.0 * iter1 .sin (), 20.0, 0.0, PI * 2.0);
-			//  Second Ball
-			cairo .move_to (20.0 + 85.0 * iter2 .cos (), 85.0 * iter2 .sin ());
-			cairo .arc (85.0 * iter2 .cos (), 85.0 * iter2 .sin (), 20.0, 0.0, PI * 2.0);
 		},
 		6 =>
 		{
-			let iterCirc = iter * 0.26;
-			//  Draw a circumference-filling circle.
-			if (iterCirc % (PI * 4.0) <= PI * 2.0)
+			let starts = 5;
+			let iterCirc = (iter * 0.07) % (PI * 2.0);
+			let radCircle = 120.0;
+			let lengthArc = 0.4;
+			for start in 0..starts
 			{
-				cairo .move_to (200.0, 0.0);
-				cairo .arc (0.0, 0.0, 200.0, 0.0, iterCirc % (PI * 2.0));
+				let iterStart = iterCirc + PI * 2.0 * start as f64 / starts as f64;
+				cairo .move_to (radCircle * iterStart .cos (), radCircle * iterStart .sin ());
+				cairo .arc (0.0, 0.0, radCircle, iterStart, iterStart + lengthArc);
 			}
-			else
+		},
+		7 =>
+		{
+			let iterScale = (iter * 0.26) % (PI * 4.0);
+			let radStart = 80.0;
+			let radSpace = 25.0;
+			let countCircle = 3;
+			for circle in 0..countCircle
 			{
-				cairo .move_to (200.0, 0.0);
-				cairo .arc_negative (0.0, 0.0, 200.0, 0.0, iterCirc % (PI * 2.0));
+				let rad = radStart + (radSpace * circle as f64);
+				if (circle % 2 == 0)
+				{
+					cairo .move_to (rad, 0.0);
+					match (iterScale <= PI * 2.0)
+					{
+						true => cairo .arc (0.0, 0.0, rad, 0.0, iterScale),
+						false => cairo .arc_negative (0.0, 0.0, rad, 0.0, iterScale),
+					};
+				}
+				else
+				{
+					let iterRev = PI * 4.0 - iterScale;
+					cairo .move_to (rad * iterRev .cos (), rad * iterRev .sin ());
+					match (iterScale <= PI * 2.0)
+					{
+						true => cairo .arc (0.0, 0.0, rad, iterRev, PI * 2.0),
+						false => cairo .arc_negative (0.0, 0.0, rad, iterRev, PI * 2.0),
+					};
+				}
 			}
-			let iter1 = -iter * 0.1 + PI * 2.0 * 0.0/3.0;
-			let iter2 = -iter * 0.1 + PI * 2.0 * 1.0/3.0;
-			let iter3 = -iter * 0.1 + PI * 2.0 * 2.0/3.0;
-			//  Orbiting N-Ary Balls.
-			//  First Ball
-			cairo .move_to (20.0 + 85.0 * iter1 .cos (), 85.0 * iter1 .sin ());
-			cairo .arc (85.0 * iter1 .cos (), 85.0 * iter1 .sin (), 20.0, 0.0, PI * 2.0);
-			//  Second Ball
-			cairo .move_to (20.0 + 85.0 * iter2 .cos (), 85.0 * iter2 .sin ());
-			cairo .arc (85.0 * iter2 .cos (), 85.0 * iter2 .sin (), 20.0, 0.0, PI * 2.0);
-			//  Third Ball
-			cairo .move_to (20.0 + 85.0 * iter3 .cos (), 85.0 * iter3 .sin ());
-			cairo .arc (85.0 * iter3 .cos (), 85.0 * iter3 .sin (), 20.0, 0.0, PI * 2.0);
+		},
+		8 =>
+		{
+			let iterScale = (iter * 0.26) % (PI * 4.0);
+			let radStart = 80.0;
+			let radSpace = 25.0;
+			let countCircle = 3;
+			for circle in 0..countCircle
+			{
+				let rad = radStart + (radSpace * circle as f64);
+				if (circle % 2 == 0)
+				{
+					cairo .move_to (rad, 0.0);
+					match (iterScale <= PI * 2.0)
+					{
+						true => cairo .arc (0.0, 0.0, rad, 0.0, iterScale),
+						false => cairo .arc_negative (0.0, 0.0, rad, 0.0, iterScale),
+					};
+				}
+				else
+				{
+					let iterRev = PI * 4.0 - iterScale;
+					cairo .move_to (rad * (iterRev + PI) .cos (), rad * (iterRev + PI) .sin ());
+					match (iterScale <= PI * 2.0)
+					{
+						true => cairo .arc (0.0, 0.0, rad, iterRev + PI, PI),
+						false => cairo .arc_negative (0.0, 0.0, rad, iterRev + PI, PI),
+					};
+				}
+			}
+		},
+		9 =>
+		{
+			let iterScale = iter * 0.1;
+			let radStart = 80.0;
+			let radSpace = 25.0;
+			let countCircle = 3;
+			for circle in 0..countCircle
+			{
+				let rad = radStart + (radSpace * circle as f64);
+				let iterScaleSpd = (iterScale + iterScale * 0.5 * circle as f64) % (PI * 4.0);
+				if (circle % 2 == 0)
+				{
+					cairo .move_to (rad, 0.0);
+					match (iterScaleSpd <= PI * 2.0)
+					{
+						true => cairo .arc (0.0, 0.0, rad, 0.0, iterScaleSpd),
+						false => cairo .arc_negative (0.0, 0.0, rad, 0.0, iterScaleSpd),
+					};
+				}
+				else
+				{
+					let iterScaleRev = PI * 4.0 - iterScaleSpd;
+					cairo .move_to (rad * iterScaleRev .cos (), rad * iterScaleRev .sin ());
+					match (iterScaleRev <= PI * 2.0)
+					{
+						true => cairo .arc_negative (0.0, 0.0, rad, iterScaleRev, PI * 2.0),
+						false => cairo .arc (0.0, 0.0, rad, iterScaleRev, PI * 2.0),
+					};
+				}
+			}
+		},
+		10 =>
+		{
+			let radCircle = 20.0;
+			let radOrbit = 200.0;
+			let sparkStart = 30.0;
+			let sparkGap = 40.0;
+			let countCircle = 3;
+
+			for circle in 0..countCircle
+			{
+				let iterStart = (iter * 0.1 + PI * 2.0 * circle as f64 / countCircle as f64) % (PI * 2.0);
+				//  Spark Line
+				cairo .move_to (sparkStart * iterStart .cos (), sparkStart * iterStart .sin ());
+				cairo .line_to ((radOrbit - radCircle / 2.0 - sparkGap) * iterStart .cos (), (radOrbit - radCircle / 2.0 - sparkGap) * iterStart .sin ());
+				//  Circle
+				cairo .move_to (radCircle + radOrbit * iterStart .cos (), radOrbit * iterStart .sin ());
+				cairo .arc (radOrbit * iterStart .cos (), radOrbit * iterStart .sin (), radCircle, 0.0, PI * 2.0);
+			}
+		},
+		11 =>
+		{
+			let radCircle = 20.0;
+			let radOrbit = 200.0;
+			let sparkStart = 30.0;
+			let sparkGap = 40.0;
+			let sparkStop = (radOrbit - radCircle / 2.0 - sparkGap);
+			let countCircle = 3;
+			let iterSpark = (iter * 8.0) % ((sparkStop - sparkStart) * 2.0);
+
+			for circle in 0..countCircle
+			{
+				let iterStart = (iter * 0.1 + PI * 2.0 * circle as f64 / countCircle as f64) % (PI * 2.0);
+				//  Spark Line
+				match (iterSpark <= sparkStop - sparkStart)
+				{
+					true =>
+					{
+						cairo .move_to (sparkStart * iterStart .cos (), sparkStart * iterStart .sin ());
+						cairo .line_to ((sparkStart + iterSpark) * iterStart .cos (), (sparkStart + iterSpark) * iterStart .sin ());
+					},
+					false =>
+					{
+						let iterSpark = iterSpark % (sparkStop - sparkStart);
+						cairo .move_to ((sparkStart + iterSpark) * iterStart .cos (), (sparkStart + iterSpark) * iterStart .sin ());
+						cairo .line_to (sparkStop * iterStart .cos (), sparkStop * iterStart .sin ());
+					},
+				};
+				//  Circle
+				cairo .move_to (radCircle + radOrbit * iterStart .cos (), radOrbit * iterStart .sin ());
+				cairo .arc (radOrbit * iterStart .cos (), radOrbit * iterStart .sin (), radCircle, 0.0, PI * 2.0);
+			}
 		},
 		_ => panic! ("'ANIM_TYPE' out-of-range!"),
 	}
