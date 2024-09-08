@@ -65,6 +65,39 @@ use gtk ::glib ::clone;
 //  of Which are Local
 //mod subModule;
 
+
+//  Enumerations
+
+/*  Animation Types
+1.  Pulsing radius-filling squircle.
+2.  Circumference-filling circle CCW.
+3.  Circumference-filling circle, CW.
+4.  Orbiting N-Ary balls.
+5.  Circumference-filling circle, with N-Ary orbiting balls.
+6.  N-start circumference-following arcs.
+7.  Concentric reverse-direction circumference-following circles.
+8.  Concentric reverse-direction circumference-following circles V2.
+9.  Concentric reverse-direction circumference-following circles, multi-speed.
+10.  Orbiting N-Ary balls, with radius lines.
+11.  Orbiting N-Ary balls, with radius-following pulsers.
+*/
+# [allow (non_camel_case_types)]
+enum AnimType
+{
+	PulseFillCircle,
+	CircFillCircleCcw,
+	CircFillCircleCw,
+	OrbitNBalls,
+	CircFillCircle_OrbitNBalls,
+	NStartCircArcs,
+	ConcentricCircArcsV1,
+	ConcentricCircArcsV2,
+	ConcentricCircArcsV3,
+	OrbitNBalls_RadLines,
+	OrbitNBalls_PulseRadLines,
+}
+
+
 //  Global Constants
 const APP_ID: &str = "uk.second-pair.testing.gtk.loading-logos";
 const APP_TITLE: &str = "Gtk Template";
@@ -82,20 +115,8 @@ const APP_H: i32 = 480;
 
 const DRAW_W: i32 = 1000;
 const DRAW_H: i32 = 1000;
-/*  Animation Types
-1.  Pulsing radius-filling squircle.
-2.  Circumference-filling circle CCW.
-3.  Circumference-filling circle, CW.
-4.  Orbiting N-Ary balls.
-5.  Circumference-filling circle, with N-Ary orbiting balls.
-6.  N-start circumference-following arcs.
-7.  Concentric reverse-direction circumference-following circles.
-8.  Concentric reverse-direction circumference-following circles V2.
-9.  Concentric reverse-direction circumference-following circles, multi-speed.
-10.  Orbiting N-Ary balls, with radius lines.
-11.  Orbiting N-Ary balls, with radius-following pulsers.
-*/
-const ANIM_TYPE: u8 = 11;
+
+const ANIM_TYPE: AnimType = AnimType ::OrbitNBalls;
 //#  It should be possible to parameterise all of the animation types.
 
 //  Global Variables
@@ -130,6 +151,17 @@ const ANIM_TYPE: u8 = 11;
 
 
 //  *--<Traits & Implementations>--*  //
+
+impl AnimType
+{
+	fn draw (self)
+	{
+		match (self)
+		{
+			_ => (),
+		};
+	}
+}
 
 //  *--</Traits & Implementations>--*  //
 
@@ -231,7 +263,7 @@ fn cairo_loading_render (area: &gtk ::DrawingArea, cairo: &gtk ::cairo ::Context
 
 	match ANIM_TYPE
 	{
-		1 =>
+		AnimType ::PulseFillCircle=>
 		{
 			let iterScaled = iter * 3.0;
 			let radMax = 100.0;
@@ -246,7 +278,7 @@ fn cairo_loading_render (area: &gtk ::DrawingArea, cairo: &gtk ::cairo ::Context
 				cairo .arc (0.0, 0.0, radMax * 2.0 - iterScaled % (radMax * 2.0), 0.0, PI * 2.0);
 			}
 		},
-		2 =>
+		AnimType ::CircFillCircleCcw=>
 		{
 			let iterScaled = iter * 0.26 % (PI * 4.0);
 			let radMax = 100.0;
@@ -257,7 +289,7 @@ fn cairo_loading_render (area: &gtk ::DrawingArea, cairo: &gtk ::cairo ::Context
 				false => cairo .arc_negative (0.0, 0.0, radMax, 0.0, iterScaled),
 			};
 		},
-		3 =>
+		AnimType ::CircFillCircleCw=>
 		{
 			let iterScaled = iter * 0.26 % (PI * 4.0);
 			let iterRev = PI * 2.0 - iterScaled;
@@ -269,7 +301,7 @@ fn cairo_loading_render (area: &gtk ::DrawingArea, cairo: &gtk ::cairo ::Context
 				false => cairo .arc_negative (0.0, 0.0, radMax, iterRev, PI * 2.0),
 			};
 		},
-		4 =>
+		AnimType ::OrbitNBalls=>
 		{
 			let radCircle = 20.0;
 			let radOrbit = 100.0;
@@ -283,7 +315,7 @@ fn cairo_loading_render (area: &gtk ::DrawingArea, cairo: &gtk ::cairo ::Context
 				cairo .arc (radOrbit * iterStart .cos (), radOrbit * iterStart .sin (), radCircle, 0.0, PI * 2.0);
 			}
 		},
-		5 =>
+		AnimType ::CircFillCircle_OrbitNBalls=>
 		{
 			let radOuter = 200.0;
 			let radOrbit = 100.0;
@@ -304,7 +336,7 @@ fn cairo_loading_render (area: &gtk ::DrawingArea, cairo: &gtk ::cairo ::Context
 				cairo .arc (radOrbit * iterStart .cos (), radOrbit * iterStart .sin (), radCircle, 0.0, PI * 2.0);
 			}
 		},
-		6 =>
+		AnimType ::NStartCircArcs=>
 		{
 			let starts = 5;
 			let iterCirc = (iter * 0.07) % (PI * 2.0);
@@ -317,7 +349,7 @@ fn cairo_loading_render (area: &gtk ::DrawingArea, cairo: &gtk ::cairo ::Context
 				cairo .arc (0.0, 0.0, radCircle, iterStart, iterStart + lengthArc);
 			}
 		},
-		7 =>
+		AnimType ::ConcentricCircArcsV1=>
 		{
 			let iterScale = (iter * 0.26) % (PI * 4.0);
 			let radStart = 80.0;
@@ -347,7 +379,7 @@ fn cairo_loading_render (area: &gtk ::DrawingArea, cairo: &gtk ::cairo ::Context
 				}
 			}
 		},
-		8 =>
+		AnimType ::ConcentricCircArcsV2=>
 		{
 			let iterScale = (iter * 0.26) % (PI * 4.0);
 			let radStart = 80.0;
@@ -377,7 +409,7 @@ fn cairo_loading_render (area: &gtk ::DrawingArea, cairo: &gtk ::cairo ::Context
 				}
 			}
 		},
-		9 =>
+		AnimType ::ConcentricCircArcsV3=>
 		{
 			let iterScale = iter * 0.1;
 			let radStart = 80.0;
@@ -408,7 +440,7 @@ fn cairo_loading_render (area: &gtk ::DrawingArea, cairo: &gtk ::cairo ::Context
 				}
 			}
 		},
-		10 =>
+		AnimType ::OrbitNBalls_RadLines =>
 		{
 			let radCircle = 20.0;
 			let radOrbit = 200.0;
@@ -427,7 +459,7 @@ fn cairo_loading_render (area: &gtk ::DrawingArea, cairo: &gtk ::cairo ::Context
 				cairo .arc (radOrbit * iterStart .cos (), radOrbit * iterStart .sin (), radCircle, 0.0, PI * 2.0);
 			}
 		},
-		11 =>
+		AnimType ::OrbitNBalls_PulseRadLines =>
 		{
 			let radCircle = 20.0;
 			let radOrbit = 200.0;
@@ -460,7 +492,6 @@ fn cairo_loading_render (area: &gtk ::DrawingArea, cairo: &gtk ::cairo ::Context
 				cairo .arc (radOrbit * iterStart .cos (), radOrbit * iterStart .sin (), radCircle, 0.0, PI * 2.0);
 			}
 		},
-		_ => panic! ("'ANIM_TYPE' out-of-range!"),
 	}
 
 	//  Render that line.
