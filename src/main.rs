@@ -113,6 +113,7 @@ const APP_SIZING: u8 = 0;
 const APP_W: i32 = 640;
 const APP_H: i32 = 480;
 
+const DRAW_TARGET_LEN: f64 = 1000.0;
 const DRAW_W: i32 = 1000;
 const DRAW_H: i32 = 1000;
 
@@ -485,8 +486,8 @@ fn cairo_loading_render (area: &gtk ::DrawingArea, cairo: &gtk ::cairo ::Context
 	static ITER: AtomicUsize = AtomicUsize ::new (0);
 	let iter = ITER .fetch_add (1, Ordering ::Relaxed) as f64;
 
-	//  Scale factor - change this to be calculated from 'width' and 'height'.
-	let areaScale = 3.0;
+	//  Scale factor - calculated from 'width' and 'height'.
+	let areaScale = core ::cmp ::min (width, height) as f64 / DRAW_TARGET_LEN;
 
 	//  Move the origin to the middle and flip the Y-axis.
 	let matrix = gtk ::cairo ::Matrix ::new (1.0, 0.0, 0.0, -1.0, width as f64 / 2.0, height as f64 / 2.0);
