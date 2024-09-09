@@ -109,13 +109,12 @@ const TIME_ANIM_SLOW: u16 = 1000;
 2:  Fixed Size
 3:  Fullscreen
 */
-const APP_SIZING: u8 = 0;
-const APP_W: i32 = 640;
-const APP_H: i32 = 480;
+const APP_SIZING: u8 = 1;
+const APP_W: i32 = 600;
+const APP_H: i32 = 600;
 
 const DRAW_TARGET_LEN: f64 = 1000.0;
-const DRAW_W: i32 = 1000;
-const DRAW_H: i32 = 1000;
+const DRAW_LINE_WIDTH_BASE: f64 = 10.0;
 
 const ANIM_TYPE: AnimType = AnimType ::OrbitNBalls;
 //#  It should be possible to parameterise all of the animation types.
@@ -468,8 +467,8 @@ fn guiMain_create (app: &gtk ::Application)
 
 	//  Attach the Cairo canvas.
 	let cairo_loading = gtk ::DrawingArea ::builder ()
-		.content_width (DRAW_W)
-		.content_height (DRAW_H)
+		.vexpand (true)
+		.hexpand (true)
 		.build ();
 	cairo_loading .set_draw_func (cairo_loading_render);
 	//  Local, so we don't mess with GTK's main-thread requirements.
@@ -507,11 +506,11 @@ fn cairo_loading_render (area: &gtk ::DrawingArea, cairo: &gtk ::cairo ::Context
 	let matrix = gtk ::cairo ::Matrix ::new (1.0, 0.0, 0.0, -1.0, width as f64 / 2.0, height as f64 / 2.0);
 	cairo .transform (matrix);
 
+	//  Perform the draw.
 	ANIM_TYPE .draw (cairo, iter, areaScale);
-	//ANIM_TYPE .render ();
 
 	//  Render that line.
-	cairo .set_line_width (10.0);
+	cairo .set_line_width (DRAW_LINE_WIDTH_BASE * areaScale);
 	cairo .set_line_cap (gtk ::cairo ::LineCap ::Round);
 	cairo .set_line_join (gtk ::cairo ::LineJoin ::Round);
 	cairo .set_source_rgba (1.0, 1.0, 1.0, 1.0);
