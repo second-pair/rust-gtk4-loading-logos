@@ -18,6 +18,7 @@
  -=>  Render it on a timeout (IE animated).
  -=>  Figure out how to draw something cool.
  -=>  Le Many Step #3.
+ -=>  Turn this into a library.
 
  -=-  Notes  -=-
  -=>  I've developed my own commenting notation for things that "aren't done" one way or another.  Such as:
@@ -89,7 +90,6 @@ const DRAW_TARGET_LEN: f64 = 1000.0;
 const DRAW_LINE_WIDTH_BASE: f64 = 10.0;
 
 const ANIM_TYPE: LoadingLogo = LoadingLogo ::OrbitNBalls;
-//const ANIM_TYPE: loading_logos ::LoadingLogo = loading_logos ::LoadingLogo ::OrbitNBalls;
 //#  It should be possible to parameterise all of the animation types.
 
 //  Global Variables
@@ -133,10 +133,10 @@ const ANIM_TYPE: LoadingLogo = LoadingLogo ::OrbitNBalls;
 
 fn main () -> glib ::ExitCode
 {
+	//  Create the application and run it.
 	let app = gtk ::Application ::builder ()
 		.application_id (APP_ID)
 		.build ();
-
 	app .connect_activate (|app| {guiMain_create (app)});
 	return app .run ();
 }
@@ -191,6 +191,7 @@ fn guiMain_create (app: &gtk ::Application)
 		.hexpand (true)
 		.build ();
 	cairo_loading .set_draw_func (cairo_loading_render);
+	//  Add a timeout to update the logo's positions.
 	//  Local, so we don't mess with GTK's main-thread requirements.
 	gtk ::glib ::timeout_add_local
 	(
@@ -216,6 +217,7 @@ fn guiMain_create (app: &gtk ::Application)
 fn cairo_loading_render (area: &gtk ::DrawingArea, cairo: &gtk ::cairo ::Context, width: i32, height: i32)
 {
 	//  'static' iteration counter.
+	//#  Handle overflow.
 	static ITER: AtomicUsize = AtomicUsize ::new (0);
 	let iter = ITER .fetch_add (1, Ordering ::Relaxed) as f64;
 
